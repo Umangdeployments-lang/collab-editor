@@ -8,10 +8,14 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const redisClient = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379', 10),
-});
+// Railway provides REDIS_URL as a full connection string.
+// Fallback to individual vars for local dev (docker-compose).
+const redisClient = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL)
+  : new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    });
 
 const docStore = new RedisDocStore(redisClient);
 
