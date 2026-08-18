@@ -101,7 +101,7 @@ export const getMembers = async (docId: string): Promise<Array<{user: User, role
     `,
     [docId]
   );
-  return result.rows.map(row => ({
+  return result.rows.map((row: any) => ({
     user: {
       id: row.id,
       email: row.email,
