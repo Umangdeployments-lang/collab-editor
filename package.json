@@ -7,8 +7,9 @@
     "packages/server"
   ],
   "scripts": {
+    "build": "npm run build --workspace=packages/server",
+    "start": "node packages/server/dist/app.js",
     "dev": "concurrently \"npm run dev --workspace=packages/server\" \"npm run dev --workspace=packages/client\"",
-    "build": "npm run build --workspace=packages/server && npm run build --workspace=packages/client",
     "install:all": "npm install"
   },
   "devDependencies": {
