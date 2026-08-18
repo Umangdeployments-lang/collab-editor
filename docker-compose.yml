@@ -1,0 +1,94 @@
+version: '3.9'
+
+services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: collab_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-collabeditor}
+      POSTGRES_USER: ${DB_USER:-collab}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-collabpass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-collab} -d ${DB_NAME:-collabeditor}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Redis Cache & Pub/Sub
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: collab_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Node.js Backend (API + WebSocket)
+  # ─────────────────────────────────────────────
+  server:
+    build:
+      context: ./packages/server
+      dockerfile: Dockerfile
+    container_name: collab_server
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CLIENT_URL: http://localhost
+    ports:
+      - "3001:3001"   # REST API
+      - "1234:1234"   # WebSocket
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # React Client (served via Nginx)
+  # ─────────────────────────────────────────────
+  client:
+    build:
+      context: ./packages/client
+      dockerfile: Dockerfile
+    container_name: collab_client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    environment:
+      VITE_API_URL: http://localhost:3001
+      VITE_WS_URL: ws://localhost:1234
+
+volumes:
+  postgres_data:
+  redis_data:
