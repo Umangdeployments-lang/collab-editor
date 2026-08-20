@@ -24,7 +24,8 @@ app.get('/health', (req, res) => {
 
 const runMigrations = async () => {
   try {
-    const migrationPath = path.join(__dirname, 'db', 'migrations', '001_init.sql');
+    // Resolves to packages/server/src/db/migrations/001_init.sql in both dev (src/app.ts) and prod (dist/app.js)
+    const migrationPath = path.join(__dirname, '..', 'src', 'db', 'migrations', '001_init.sql');
     const sql = fs.readFileSync(migrationPath, 'utf8');
     await query(sql);
     console.log('Migrations executed successfully.');
