@@ -23,15 +23,15 @@ const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   login: async (email, password) => {
     const response = await authApi.login(email, password);
-    const { token, user } = response.data;
-    localStorage.setItem('accessToken', token);
-    set({ user, accessToken: token });
+    const { accessToken, user } = response.data;
+    localStorage.setItem('accessToken', accessToken);
+    set({ user, accessToken });
   },
   register: async (email, name, password) => {
     const response = await authApi.register(email, name, password);
-    const { token, user } = response.data;
-    localStorage.setItem('accessToken', token);
-    set({ user, accessToken: token });
+    const { accessToken, user } = response.data;
+    localStorage.setItem('accessToken', accessToken);
+    set({ user, accessToken });
   },
   logout: () => {
     localStorage.removeItem('accessToken');
